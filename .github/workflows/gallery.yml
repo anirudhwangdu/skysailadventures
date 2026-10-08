@@ -1,0 +1,29 @@
+name: Rebuild gallery
+
+# Runs whenever a photo is added, renamed or deleted in the gallery/ folder,
+# or when you tap "Run workflow" on the Actions tab.
+on:
+  push:
+    paths:
+      - "gallery/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pillow pillow-heif
+      - run: python build_gallery.py
+      - name: Commit the updated page
+        run: |
+          git config user.name "gallery-bot"
+          git config user.email "gallery-bot@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Update gallery" && git push)
