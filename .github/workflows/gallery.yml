@@ -1,6 +1,6 @@
 name: Rebuild gallery
 
-# Runs whenever a photo is added, renamed or deleted in the gallery/ folder,
+# Runs whenever a photo or video is added, renamed or deleted in the gallery/ folder,
 # or when you tap "Run workflow" on the Actions tab.
 on:
   push:
@@ -14,16 +14,21 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pillow pillow-heif
+      - name: Install tools (ffmpeg converts videos)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg
+          pip install pillow pillow-heif
       - run: python build_gallery.py
       - name: Commit the updated page
         run: |
           git config user.name "gallery-bot"
           git config user.email "gallery-bot@users.noreply.github.com"
-          git add index.html
+          git add -A -- . ':!.gallery_cache'
           git diff --cached --quiet || (git commit -m "Update gallery" && git push)
